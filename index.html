@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartCharge — Telemetria Energética IoT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ========================================
+       VARIÁVEIS DE DESIGN — PALETA SMARTCHARGE
+       ======================================== */
+    :root {
+      --dark:    #0A1628;
+      --navy:    #0D2B4E;
+      --teal:    #00B4D8;
+      --teal-dk: #0077B6;
+      --green:   #06D6A0;
+      --accent:  #FFD60A;
+      --white:   #FFFFFF;
+      --muted:   #8AAFC8;
+      --card-bg: #112240;
+      --red:     #FF4757;
+      --radius:  12px;
+      --shadow:  0 4px 24px rgba(0,180,216,0.10);
+    }
+
+    /* ========================================
+       RESET E BASE GLOBAL
+       ======================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--dark);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar customizada — fina e teal */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--navy); }
+    ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--teal-dk); }
+
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; font-family: 'Inter', sans-serif; border: none; outline: none; }
+    ul { list-style: none; }
+
+    /* Utilitários */
+    .section-container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+    .text-teal   { color: var(--teal); }
+    .text-green  { color: var(--green); }
+    .text-accent { color: var(--accent); }
+    .text-muted  { color: var(--muted); }
+    .text-red    { color: var(--red); }
+    .fw-700 { font-weight: 700; }
+    .fw-600 { font-weight: 600; }
+    .fw-500 { font-weight: 500; }
+
+    /* ========================================
+       COMPONENTES — BADGES
+       ======================================== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-green  { background: rgba(6,214,160,0.15); color: var(--green); }
+    .badge-yellow { background: rgba(255,214,10,0.15); color: var(--accent); }
+    .badge-red    { background: rgba(255,71,87,0.15);  color: var(--red); }
+    .badge-teal   { background: rgba(0,180,216,0.15);  color: var(--teal); }
+    .badge-muted  { background: rgba(138,175,200,0.10); color: var(--muted); }
+
+    /* ========================================
+       1. NAVBAR FIXA
+       ======================================== */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 999;
+      height: 64px;
+      background: rgba(10, 22, 40, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,180,216,0.12);
+      display: flex;
+      align-items: center;
+    }
+
+    .navbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    /* Logo */
+    .nav-logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      white-space: nowrap;
+    }
+    .nav-logo span { color: var(--teal); }
+
+    /* Links de navegação */
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-links a {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { background: rgba(0,180,216,0.1); color: var(--white); }
+    .nav-links a.active { color: var(--teal); }
+
+    /* Direita da navbar */
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-entrar {
+      padding: 7px 18px;
+      border-radius: 8px;
+      border: 1.5px solid var(--teal);
+      background: transparent;
+      color: var(--teal);
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-entrar:hover { background: var(--teal); color: var(--dark); }
+
+    .nav-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dk));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--dark);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ========================================
+       2. DASHBOARD PRINCIPAL
+       ======================================== */
+    .section {
+      padding: 100px 0 60px;
+    }
+    .section:first-of-type { padding-top: 100px; }
+    .section + .section { padding-top: 40px; }
+
+    /* Cabeçalho do dashboard */
+    .dash-header { margin-bottom: 32px; }
+    .dash-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .dash-header p { color: var(--muted); font-size: 15px; }
+
+    /* KPI Cards — grid de 4 */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,180,216,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,180,216,0.18);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--teal), var(--teal-dk));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .kpi-card:hover::before { opacity: 1; }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kpi-up { color: var(--green); }
+    .kpi-alert { color: var(--red); font-weight: 700; }
+
+    /* Sparkline SVG no KPI */
+    .kpi-sparkline {
+      margin-top: 10px;
+      height: 36px;
+    }
+    .kpi-sparkline:hover .spark-line { stroke-width: 2.5; }
+
+    /* Barra de progresso dos KPIs */
+    .kpi-progress {
+      margin-top: 10px;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .kpi-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--teal), var(--teal-dk));
+      transition: width 1.2s ease;
+    }
+
+    /* Badge de alerta no card */
+    .kpi-badge-alert {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,71,87,0.12);
+      color: var(--red);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-top: 8px;
+    }
+
+    /* Grid inferior do dashboard — 2 colunas */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+    }
+
+    /* Card base reutilizável */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,180,216,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,180,216,0.15);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title-sub { font-size: 12px; font-weight: 400; color: var(--muted); }
+
+    /* ---- Gráfico SVG de consumo semanal ---- */
+    .chart-wrap { position: relative; }
+    #consumo-chart { width: 100%; height: 180px; overflow: visible; }
+
+    /* Labels do gráfico */
+    .chart-labels-x {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      padding: 0 10px;
+    }
+    .chart-labels-x span {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      flex: 1;
+    }
+
+    /* ---- Lista de Vagas Ativas ---- */
+    .vagas-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .vaga-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(0,180,216,0.06);
+      transition: background 0.2s;
+    }
+    .vaga-item:hover { background: rgba(0,180,216,0.05); }
+
+    .vaga-icon { font-size: 20px; flex-shrink: 0; }
+    .vaga-info { flex: 1; min-width: 0; }
+    .vaga-nome {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vaga-kw {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .vaga-kw .kw-val { color: var(--teal); font-weight: 600; }
+
+    .btn-ghost-sm {
+      padding: 5px 12px;
+      border-radius: 7px;
+      border: 1.5px solid rgba(0,180,216,0.35);
+      background: transparent;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 600;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-ghost-sm:hover { background: rgba(0,180,216,0.1); }
+
+    /* ========================================
+       SEPARADOR DE SEÇÃO
+       ======================================== */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .section-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+    .section-badge {
+      background: rgba(0,180,216,0.15);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+    .section-divider {
+      flex: 1;
+      height: 1px;
+      background: rgba(0,180,216,0.12);
+    }
+
+    /* ========================================
+       3. PAINEL CONDOMÍNIO
+       ======================================== */
+    #condominios { background: rgba(13,43,78,0.3); }
+
+    .condo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .condo-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 22px;
+      border: 1px solid rgba(0,180,216,0.08);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .condo-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,180,216,0.15);
+    }
+
+    .condo-name {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .condo-addr {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .condo-stat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .condo-stat-val { font-weight: 600; color: var(--teal); }
+
+    .prog-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0 14px;
+    }
+    .prog-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1.5s ease;
+    }
+    .prog-teal   { background: linear-gradient(90deg, var(--teal), var(--teal-dk)); }
+    .prog-yellow { background: linear-gradient(90deg, var(--accent), #f0a500); }
+    .prog-green  { background: linear-gradient(90deg, var(--green), #04b38a); }
+
+    .condo-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+    }
+
+    .btn-primary-sm {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: var(--teal);
+      color: var(--dark);
+      font-size: 12px;
+      font-weight: 700;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-primary-sm:hover { background: var(--teal-dk); transform: scale(1.03); }
+
+    /* Tabela de recargas */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid rgba(0,180,216,0.08);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead th {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      background: rgba(0,180,216,0.05);
+      border-bottom: 1px solid rgba(0,180,216,0.1);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(0,180,216,0.05); }
+    tbody td {
+      padding: 11px 14px;
+      color: var(--white);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    tbody td:first-child { font-weight: 600; }
+
+    /* ========================================
+       4. PAINEL INDUSTRIAL
+       ======================================== */
+    #industrial { background: rgba(10,22,40,0.9); }
+
+    /* Métricas inline */
+    .ind-metrics {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .ind-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ind-metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .ind-metric-val {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .ind-metric-sub { font-size: 12px; color: var(--muted); }
+
+    /* Barra circular SVG para meta ESG */
+    .esg-circle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    #esg-ring { transform: rotate(-90deg); }
+    .esg-ring-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; }
+    .esg-ring-fill {
+      fill: none;
+      stroke: var(--green);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 163; /* 2π×26 ≈ 163 */
+      stroke-dashoffset: 163;
+      transition: stroke-dashoffset 1.5s ease;
+    }
+    .esg-label { font-size: 16px; font-weight: 700; }
+    .esg-sub   { font-size: 11px; color: var(--muted); }
+
+    /* Grid de máquinas */
+    .machines-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .machine-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 18px;
+      border: 1px solid rgba(0,180,216,0.08);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .machine-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,180,216,0.15);
+    }
+    .machine-card.anomalia {
+      border-color: rgba(255,71,87,0.4);
+      animation: pulse-anomalia 2s infinite;
+    }
+    @keyframes pulse-anomalia {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,71,87,0.3); }
+      50%       { box-shadow: 0 0 0 8px rgba(255,71,87,0); }
+    }
+
+    .machine-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .machine-kw {
+      font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .machine-kw-unit { font-size: 14px; font-weight: 500; color: var(--muted); }
+
+    /* Mini gráfico de barras inline */
+    .mini-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 36px;
+      margin: 10px 0;
+    }
+    .mini-bar {
+      flex: 1;
+      border-radius: 3px 3px 0 0;
+      min-height: 4px;
+      animation: bar-grow 0.6s ease backwards;
+    }
+    @keyframes bar-grow {
+      from { transform: scaleY(0); transform-origin: bottom; }
+      to   { transform: scaleY(1); transform-origin: bottom; }
+    }
+    .bar-teal   { background: var(--teal);   opacity: 0.7; }
+    .bar-yellow { background: var(--accent);  opacity: 0.7; }
+    .bar-red    { background: var(--red);     opacity: 0.8; }
+
+    .machine-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .machine-since { font-size: 11px; color: var(--muted); }
+
+    /* ESG Progress bars */
+    .esg-bars { display: flex; flex-direction: column; gap: 14px; }
+    .esg-bar-row { display: flex; flex-direction: column; gap: 5px; }
+    .esg-bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .esg-bar-label { font-weight: 500; }
+    .esg-bar-pct   { font-weight: 700; color: var(--green); }
+    .esg-bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .esg-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--green), #04b38a);
+      transition: width 1.5s ease;
+    }
+
+    /* ========================================
+       5. CENTRAL DE ALERTAS
+       ======================================== */
+    #alertas { background: rgba(13,43,78,0.3); }
+
+    .alert-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .alert-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      border: 1px solid rgba(0,180,216,0.08);
+      border-left-width: 3px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .alert-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(0,180,216,0.12);
+    }
+    .alert-card.critico   { border-left-color: var(--red); }
+    .alert-card.atencao   { border-left-color: var(--accent); }
+    .alert-card.info      { border-left-color: var(--green); }
+    .alert-card.resolvido { border-left-color: var(--green); background: rgba(6,214,160,0.05); }
+
+    .alert-icon { font-size: 22px; flex-shrink: 0; }
+    .alert-body { flex: 1; }
+    .alert-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .alert-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .alert-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .alert-time { font-size: 11px; color: var(--muted); }
+    .alert-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .btn-teal {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--teal);
+      color: var(--dark);
+      font-size: 13px;
+      font-weight: 700;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-teal:hover { background: var(--teal-dk); transform: scale(1.03); }
+    .btn-teal:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(0,180,216,0.35);
+      background: transparent;
+      color: var(--teal);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(0,180,216,0.1); }
+
+    /* Badge numérico vermelho */
+    .badge-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--red);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ========================================
+       6. FAB — GERAR RATEIO
+       ======================================== */
+    .fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 900;
+      padding: 14px 22px;
+      border-radius: 50px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-dk));
+      color: var(--dark);
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 6px 24px rgba(0,180,216,0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .fab:hover {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 10px 32px rgba(0,180,216,0.5);
+    }
+    .fab:active { transform: scale(0.97); }
+
+    /* ========================================
+       MODAL DE RATEIO
+       ======================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(5,12,24,0.75);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--navy);
+      border-radius: 16px;
+      border: 1px solid rgba(0,180,216,0.15);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 720px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.94);
+      transition: transform 0.3s;
+    }
+    .modal-overlay.open .modal { transform: scale(1); }
+
+    .modal-header {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid rgba(0,180,216,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .modal-close:hover { background: rgba(255,71,87,0.15); color: var(--red); }
+
+    .modal-body { padding: 22px 24px; }
+
+    .modal-table { font-size: 13px; }
+    .modal-table tfoot td {
+      padding: 13px 14px;
+      border-top: 1px solid rgba(0,180,216,0.15);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .modal-table tfoot .total-val { color: var(--teal); font-size: 16px; }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid rgba(0,180,216,0.1);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ========================================
+       TOAST NOTIFICATION
+       ======================================== */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      right: 28px;
+      z-index: 1100;
+      background: var(--green);
+      color: var(--dark);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(6,214,160,0.35);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ========================================
+       7. FOOTER
+       ======================================== */
+    footer {
+      background: var(--navy);
+      border-top: 2px solid var(--teal);
+      padding: 40px 0 28px;
+      margin-top: 60px;
+    }
+    .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .footer-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 32px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .footer-brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .footer-brand-name span { color: var(--teal); }
+    .footer-tagline { font-size: 13px; color: var(--muted); max-width: 260px; }
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--teal); }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 18px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ========================================
+       RESPONSIVIDADE — MOBILE FIRST (< 768px)
+       ======================================== */
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .machines-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .navbar-inner { padding: 0 16px; }
+      .nav-links { display: none; }
+      .section-container { padding: 0 16px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .condo-grid { grid-template-columns: 1fr; }
+      .machines-grid { grid-template-columns: 1fr; }
+      .ind-metrics { gap: 20px; }
+      .alert-card { flex-wrap: wrap; }
+      .alert-actions { width: 100%; justify-content: flex-end; }
+      .footer-top { flex-direction: column; }
+      .footer-links { gap: 14px; }
+      .kpi-value { font-size: 26px; }
+      .fab { padding: 12px 18px; font-size: 13px; }
+    }
+
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ========================================
+       ANIMAÇÕES EXTRAS
+       ======================================== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in {
+      animation: fadeInUp 0.5s ease backwards;
+    }
+    /* Atraso em cascata para cards */
+    .condo-card:nth-child(1) { animation-delay: 0.05s; }
+    .condo-card:nth-child(2) { animation-delay: 0.12s; }
+    .condo-card:nth-child(3) { animation-delay: 0.19s; }
+    .machine-card:nth-child(1) { animation-delay: 0.05s; }
+    .machine-card:nth-child(2) { animation-delay: 0.10s; }
+    .machine-card:nth-child(3) { animation-delay: 0.15s; }
+    .machine-card:nth-child(4) { animation-delay: 0.20s; }
+    .machine-card:nth-child(5) { animation-delay: 0.25s; }
+    .machine-card:nth-child(6) { animation-delay: 0.30s; }
+
+    /* Pulsação suave em barras de progresso ativas */
+    @keyframes prog-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.75; }
+    }
+    .prog-pulse { animation: prog-pulse 2.4s ease-in-out infinite; }
+
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     1. NAVBAR FIXA
+     ============================================================ -->
+<nav class="navbar" role="navigation" aria-label="Navegação principal">
+  <div class="navbar-inner">
+
+    <!-- Logo -->
+    <a href="#dashboard" class="nav-logo" aria-label="SmartCharge - ir para o início">
+      SMART<span>CHARGE</span>
+    </a>
+
+    <!-- Links de navegação -->
+    <ul class="nav-links" role="list">
+      <li><a href="#dashboard"   class="active">Dashboard</a></li>
+      <li><a href="#condominios">Condomínios</a></li>
+      <li><a href="#industrial">Industrial</a></li>
+      <li><a href="#alertas">Alertas</a></li>
+      <li><a href="#footer">Relatórios</a></li>
+    </ul>
+
+    <!-- Botão + Avatar -->
+    <div class="nav-right">
+      <button class="btn-entrar">Entrar</button>
+      <div class="nav-avatar" title="Arthur Souza">AS</div>
+    </div>
+
+  </div>
+</nav>
+
+<!-- ============================================================
+     2. DASHBOARD PRINCIPAL
+     ============================================================ -->
+<section id="dashboard" class="section" style="padding-top: 88px;">
+  <div class="section-container">
+
+    <!-- Cabeçalho saudação -->
+    <div class="dash-header">
+      <h1>Bom dia, Arthur 👋</h1>
+      <p id="data-hoje">Carregando data...</p>
+    </div>
+
+    <!-- KPI Cards — 4 métricas principais -->
+    <div class="kpi-grid">
+
+      <!-- KPI 1: Consumo Total -->
+      <div class="kpi-card">
+        <div class="kpi-label">Consumo Total Hoje</div>
+        <div class="kpi-value text-white">
+          <span id="kpi-consumo" data-target="847">0</span>
+          <span style="font-size:16px;color:var(--muted);"> kWh</span>
+        </div>
+        <div class="kpi-sub">
+          <span class="kpi-up">↑ 12%</span>
+          <span>vs. ontem</span>
+        </div>
+        <!-- Sparkline animada -->
+        <svg class="kpi-sparkline" viewBox="0 0 120 36" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sg1" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="var(--teal)" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="var(--teal)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,28 L20,22 L40,26 L60,14 L80,18 L100,10 L120,4 L120,36 L0,36 Z"
+                fill="url(#sg1)"/>
+          <path class="spark-line"
+                d="M0,28 L20,22 L40,26 L60,14 L80,18 L100,10 L120,4"
+                fill="none" stroke="var(--teal)" stroke-width="2"
+                stroke-dasharray="240" stroke-dashoffset="240"
+                style="transition: stroke-dashoffset 1.5s ease 0.3s"/>
+        </svg>
+      </div>
+
+      <!-- KPI 2: Vagas em Recarga -->
+      <div class="kpi-card">
+        <div class="kpi-label">Vagas em Recarga</div>
+        <div class="kpi-value text-teal">
+          <span id="kpi-vagas" data-target="12">0</span>
+          <span style="font-size:16px;color:var(--muted);"> / 48</span>
+        </div>
+        <div class="kpi-sub">
+          <span>Ocupação atual</span>
+        </div>
+        <div class="kpi-progress">
+          <div class="kpi-progress-fill prog-pulse" id="kpi-vagas-bar" style="width: 0%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">25% das vagas ativas</div>
+      </div>
+
+      <!-- KPI 3: Economia Gerada -->
+      <div class="kpi-card">
+        <div class="kpi-label">Economia Gerada</div>
+        <div class="kpi-value text-green">
+          R$ <span id="kpi-economia" data-target="3241">0</span>
+        </div>
+        <div class="kpi-sub">
+          <span class="kpi-up">↑ R$ 421</span>
+          <span>em relação a junho/25</span>
+        </div>
+        <svg class="kpi-sparkline" viewBox="0 0 120 36" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sg2" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="var(--green)" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="var(--green)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,30 L20,26 L40,28 L60,20 L80,16 L100,8 L120,6 L120,36 L0,36 Z"
+                fill="url(#sg2)"/>
+          <path class="spark-line"
+                d="M0,30 L20,26 L40,28 L60,20 L80,16 L100,8 L120,6"
+                fill="none" stroke="var(--green)" stroke-width="2"
+                stroke-dasharray="250" stroke-dashoffset="250"
+                style="transition: stroke-dashoffset 1.5s ease 0.5s"/>
+        </svg>
+      </div>
+
+      <!-- KPI 4: Alertas Ativos -->
+      <div class="kpi-card">
+        <div class="kpi-label">Alertas Ativos</div>
+        <div class="kpi-value text-white">
+          <span id="kpi-alertas" data-target="2">0</span>
+        </div>
+        <div class="kpi-sub">
+          <span>Requer atenção</span>
+        </div>
+        <div class="kpi-badge-alert">
+          ⚠️ <span>2 alertas pendentes</span>
+        </div>
+      </div>
+
+    </div><!-- fim kpi-grid -->
+
+    <!-- Grade inferior: Gráfico + Vagas Ativas -->
+    <div class="dash-grid">
+
+      <!-- Gráfico SVG de consumo semanal -->
+      <div class="card">
+        <div class="card-title">
+          Consumo Semanal
+          <span class="card-title-sub">Últimos 7 dias · kWh</span>
+        </div>
+
+        <div class="chart-wrap">
+          <svg id="consumo-chart" viewBox="0 0 540 180" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="area-grad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%"   stop-color="#00B4D8" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#00B4D8" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Grade horizontal -->
+            <line x1="30" y1="20"  x2="530" y2="20"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="30" y1="60"  x2="530" y2="60"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="30" y1="100" x2="530" y2="100" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="30" y1="140" x2="530" y2="140" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+            <!-- Labels eixo Y -->
+            <text x="22" y="24"  fill="#8AAFC8" font-size="10" text-anchor="end" font-family="Inter">900</text>
+            <text x="22" y="64"  fill="#8AAFC8" font-size="10" text-anchor="end" font-family="Inter">700</text>
+            <text x="22" y="104" fill="#8AAFC8" font-size="10" text-anchor="end" font-family="Inter">500</text>
+            <text x="22" y="144" fill="#8AAFC8" font-size="10" text-anchor="end" font-family="Inter">300</text>
+
+            <!-- Área preenchida -->
+            <path id="chart-area"
+                  d="M50,120 C90,120 90,80 130,75 C170,70 170,95 210,90 C250,85 250,50 290,45 C330,40 330,65 370,58 C410,51 410,30 450,28 C490,26 490,60 530,55 L530,160 L50,160 Z"
+                  fill="url(#area-grad)"/>
+
+            <!-- Linha principal — animação stroke-dashoffset -->
+            <path id="chart-line"
+                  d="M50,120 C90,120 90,80 130,75 C170,70 170,95 210,90 C250,85 250,50 290,45 C330,40 330,65 370,58 C410,51 410,30 450,28 C490,26 490,60 530,55"
+                  fill="none"
+                  stroke="#00B4D8"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-dasharray="700"
+                  stroke-dashoffset="700"/>
+
+            <!-- Pontos de dados -->
+            <circle cx="50"  cy="120" r="4" fill="#00B4D8" opacity="0"/>
+            <circle cx="130" cy="75"  r="4" fill="#00B4D8" opacity="0"/>
+            <circle cx="210" cy="90"  r="4" fill="#00B4D8" opacity="0"/>
+            <circle cx="290" cy="45"  r="4" fill="#00B4D8" opacity="0"/>
+            <circle cx="370" cy="58"  r="4" fill="#00B4D8" opacity="0"/>
+            <circle cx="450" cy="28"  r="4" fill="#06D6A0" opacity="0"/>
+            <circle cx="530" cy="55"  r="4" fill="#00B4D8" opacity="0"/>
+
+            <!-- Valores sobre os pontos -->
+            <text x="50"  y="112" fill="#8AAFC8" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv1">612</text>
+            <text x="130" y="67"  fill="#8AAFC8" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv2">748</text>
+            <text x="210" y="82"  fill="#8AAFC8" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv3">698</text>
+            <text x="290" y="37"  fill="#8AAFC8" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv4">830</text>
+            <text x="370" y="50"  fill="#8AAFC8" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv5">796</text>
+            <text x="450" y="20"  fill="#06D6A0" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv6">902</text>
+            <text x="530" y="47"  fill="#8AAFC8" font-size="9" text-anchor="middle" font-family="Inter" opacity="0" id="cv7">847</text>
+
+            <!-- Destaque hoje (último ponto) -->
+            <circle cx="530" cy="55" r="6" fill="var(--dark)" stroke="#06D6A0" stroke-width="2.5" opacity="0" id="today-ring"/>
+          </svg>
+
+          <!-- Labels eixo X -->
+          <div class="chart-labels-x">
+            <span>Seg</span><span>Ter</span><span>Qua</span>
+            <span>Qui</span><span>Sex</span><span>Sáb</span>
+            <span style="color:var(--green);font-weight:600;">Dom</span>
+          </div>
+        </div>
+      </div><!-- fim card gráfico -->
+
+      <!-- Lista de Vagas Ativas -->
+      <div class="card">
+        <div class="card-title">
+          Vagas Ativas Agora
+          <span class="badge badge-green">Ao vivo</span>
+        </div>
+
+        <div class="vagas-list" id="vagas-list">
+          <!-- Gerado via JS -->
+        </div>
+      </div>
+
+    </div><!-- fim dash-grid -->
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     3. PAINEL CONDOMÍNIO
+     ============================================================ -->
+<section id="condominios" class="section" style="padding-top: 60px;">
+  <div class="section-container">
+
+    <!-- Cabeçalho da seção -->
+    <div class="section-header">
+      <span class="section-tag">Condomínios</span>
+      <span class="section-badge">3 ativos</span>
+      <div class="section-divider"></div>
+    </div>
+
+    <!-- Grid de 3 cards de condomínio -->
+    <div class="condo-grid">
+
+      <!-- Card 1 -->
+      <div class="condo-card animate-in">
+        <div class="condo-name">Edifício Aurora</div>
+        <div class="condo-addr">📍 Batel, Curitiba — PR</div>
+        <div class="condo-stat">
+          <span>Total de vagas</span>
+          <span class="condo-stat-val">48</span>
+        </div>
+        <div class="condo-stat">
+          <span>Ativas agora</span>
+          <span class="condo-stat-val">12</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:10px;">
+          <span>Capacidade</span>
+          <span style="color:var(--teal);font-weight:600;">68%</span>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-bar-fill prog-teal" style="width: 0%" data-width="68"></div>
+        </div>
+        <div class="condo-footer">
+          <span class="badge badge-green">● Operacional</span>
+          <button class="btn-primary-sm">Gerenciar</button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="condo-card animate-in">
+        <div class="condo-name">Residencial Boa Vista</div>
+        <div class="condo-addr">📍 Água Verde, Curitiba — PR</div>
+        <div class="condo-stat">
+          <span>Total de vagas</span>
+          <span class="condo-stat-val">32</span>
+        </div>
+        <div class="condo-stat">
+          <span>Ativas agora</span>
+          <span class="condo-stat-val">8</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:10px;">
+          <span>Capacidade</span>
+          <span style="color:var(--accent);font-weight:600;">55%</span>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-bar-fill prog-yellow" style="width: 0%" data-width="55"></div>
+        </div>
+        <div class="condo-footer">
+          <span class="badge badge-yellow">⚠ Atenção</span>
+          <button class="btn-primary-sm">Gerenciar</button>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="condo-card animate-in">
+        <div class="condo-name">Edifício Lumière</div>
+        <div class="condo-addr">📍 Cabral, Curitiba — PR</div>
+        <div class="condo-stat">
+          <span>Total de vagas</span>
+          <span class="condo-stat-val">64</span>
+        </div>
+        <div class="condo-stat">
+          <span>Ativas agora</span>
+          <span class="condo-stat-val">3</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:10px;">
+          <span>Capacidade</span>
+          <span style="color:var(--green);font-weight:600;">22%</span>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-bar-fill prog-green" style="width: 0%" data-width="22"></div>
+        </div>
+        <div class="condo-footer">
+          <span class="badge badge-green">● Operacional</span>
+          <button class="btn-primary-sm">Gerenciar</button>
+        </div>
+      </div>
+
+    </div><!-- fim condo-grid -->
+
+    <!-- Tabela de últimas recargas -->
+    <div class="card" style="padding: 22px; margin-bottom: 0;">
+      <div class="card-title" style="margin-bottom: 16px;">
+        Últimas Recargas
+        <span class="card-title-sub">Todos os condomínios</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Vaga</th>
+              <th>Unidade</th>
+              <th>Início</th>
+              <th>Duração</th>
+              <th>Consumo</th>
+              <th>Valor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Vaga 04</td>
+              <td>Unidade 301 — Aurora</td>
+              <td>08h12</td>
+              <td>2h 43min</td>
+              <td>20,1 kWh</td>
+              <td>R$ 18,49</td>
+              <td><span class="badge badge-teal">Ativa</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 11</td>
+              <td>Unidade 502 — Aurora</td>
+              <td>07h30</td>
+              <td>1h 20min</td>
+              <td>9,9 kWh</td>
+              <td>R$ 9,10</td>
+              <td><span class="badge badge-green">Concluída</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 07</td>
+              <td>Unidade 104 — Boa Vista</td>
+              <td>06h55</td>
+              <td>3h 05min</td>
+              <td>22,8 kWh</td>
+              <td>R$ 20,98</td>
+              <td><span class="badge badge-green">Concluída</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 18</td>
+              <td>Unidade 201 — Lumière</td>
+              <td>09h00</td>
+              <td>45min</td>
+              <td>5,5 kWh</td>
+              <td>R$ 5,06</td>
+              <td><span class="badge badge-teal">Ativa</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 03</td>
+              <td>Unidade 403 — Aurora</td>
+              <td>05h22</td>
+              <td>4h 10min</td>
+              <td>30,8 kWh</td>
+              <td>R$ 28,34</td>
+              <td><span class="badge badge-green">Concluída</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 23</td>
+              <td>Unidade 601 — Boa Vista</td>
+              <td>04h45</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="badge badge-muted">Cancelada</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 31</td>
+              <td>Unidade 302 — Lumière</td>
+              <td>10h05</td>
+              <td>30min</td>
+              <td>3,7 kWh</td>
+              <td>R$ 3,40</td>
+              <td><span class="badge badge-teal">Ativa</span></td>
+            </tr>
+            <tr>
+              <td>Vaga 09</td>
+              <td>Unidade 101 — Aurora</td>
+              <td>03h18</td>
+              <td>5h 02min</td>
+              <td>37,1 kWh</td>
+              <td>R$ 34,13</td>
+              <td><span class="badge badge-green">Concluída</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     4. PAINEL INDUSTRIAL
+     ============================================================ -->
+<section id="industrial" class="section" style="padding-top: 60px;">
+  <div class="section-container">
+
+    <!-- Cabeçalho da seção -->
+    <div class="section-header">
+      <span class="section-tag">Industrial</span>
+      <span class="section-badge">Brose — São José dos Pinhais</span>
+      <div class="section-divider"></div>
+    </div>
+
+    <!-- Métricas inline com círculo ESG -->
+    <div class="ind-metrics">
+
+      <div class="ind-metric">
+        <span class="ind-metric-label">Pontos Monitorados</span>
+        <span class="ind-metric-val">24</span>
+        <span class="ind-metric-sub">sensores ativos</span>
+      </div>
+
+      <div class="ind-metric">
+        <span class="ind-metric-label">Consumo Planta / Mês</span>
+        <span class="ind-metric-val">142.800 <span style="font-size:14px;font-weight:500;color:var(--muted);">kWh</span></span>
+        <span class="ind-metric-sub">junho 2026</span>
+      </div>
+
+      <!-- Barra circular ESG -->
+      <div class="esg-circle-wrap">
+        <svg id="esg-ring" width="64" height="64" viewBox="0 0 64 64">
+          <circle class="esg-ring-bg"   cx="32" cy="32" r="26"/>
+          <circle class="esg-ring-fill" cx="32" cy="32" r="26" id="esg-arc"/>
+        </svg>
+        <div>
+          <div class="esg-label" style="color:var(--green);">87%</div>
+          <div class="esg-sub">Meta ESG atingida</div>
+        </div>
+      </div>
+
+    </div><!-- fim ind-metrics -->
+
+    <!-- Grid 3×2 de máquinas monitoradas -->
+    <div class="machines-grid">
+
+      <!-- Máquina 1: Normal -->
+      <div class="machine-card animate-in">
+        <div class="machine-name">Compressor C-01</div>
+        <div class="machine-kw">
+          38<span class="machine-kw-unit"> kW</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar bar-teal" style="height:55%;animation-delay:.05s"></div>
+          <div class="mini-bar bar-teal" style="height:70%;animation-delay:.10s"></div>
+          <div class="mini-bar bar-teal" style="height:62%;animation-delay:.15s"></div>
+          <div class="mini-bar bar-teal" style="height:80%;animation-delay:.20s"></div>
+          <div class="mini-bar bar-teal" style="height:72%;animation-delay:.25s"></div>
+          <div class="mini-bar bar-teal" style="height:100%;animation-delay:.30s"></div>
+        </div>
+        <div class="machine-footer">
+          <span class="machine-since">há 6h ativo</span>
+          <span class="badge badge-green">● Normal</span>
+        </div>
+      </div>
+
+      <!-- Máquina 2: Normal -->
+      <div class="machine-card animate-in">
+        <div class="machine-name">Torno CNC T-03</div>
+        <div class="machine-kw">
+          22<span class="machine-kw-unit"> kW</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar bar-teal" style="height:40%;animation-delay:.05s"></div>
+          <div class="mini-bar bar-teal" style="height:48%;animation-delay:.10s"></div>
+          <div class="mini-bar bar-teal" style="height:45%;animation-delay:.15s"></div>
+          <div class="mini-bar bar-teal" style="height:50%;animation-delay:.20s"></div>
+          <div class="mini-bar bar-teal" style="height:58%;animation-delay:.25s"></div>
+          <div class="mini-bar bar-teal" style="height:52%;animation-delay:.30s"></div>
+        </div>
+        <div class="machine-footer">
+          <span class="machine-since">há 4h ativo</span>
+          <span class="badge badge-green">● Normal</span>
+        </div>
+      </div>
+
+      <!-- Máquina 3: ANOMALIA — com pulse vermelho -->
+      <div class="machine-card anomalia animate-in">
+        <div class="machine-name">Prensa P-07 <span style="font-size:11px;color:var(--red);">⚠ ANOMALIA</span></div>
+        <div class="machine-kw" style="color:var(--red);">
+          94<span class="machine-kw-unit" style="color:var(--muted);"> kW</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar bar-teal"   style="height:50%;animation-delay:.05s"></div>
+          <div class="mini-bar bar-teal"   style="height:55%;animation-delay:.10s"></div>
+          <div class="mini-bar bar-yellow" style="height:70%;animation-delay:.15s"></div>
+          <div class="mini-bar bar-yellow" style="height:80%;animation-delay:.20s"></div>
+          <div class="mini-bar bar-red"    style="height:95%;animation-delay:.25s"></div>
+          <div class="mini-bar bar-red"    style="height:100%;animation-delay:.30s"></div>
+        </div>
+        <div class="machine-footer">
+          <span class="machine-since" style="color:var(--red);">+18% da média</span>
+          <span class="badge badge-red">● Anomalia</span>
+        </div>
+      </div>
+
+      <!-- Máquina 4: Atenção -->
+      <div class="machine-card animate-in">
+        <div class="machine-name">Injetora I-12</div>
+        <div class="machine-kw" style="color:var(--accent);">
+          61<span class="machine-kw-unit" style="color:var(--muted);"> kW</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar bar-teal"   style="height:60%;animation-delay:.05s"></div>
+          <div class="mini-bar bar-teal"   style="height:65%;animation-delay:.10s"></div>
+          <div class="mini-bar bar-yellow" style="height:75%;animation-delay:.15s"></div>
+          <div class="mini-bar bar-yellow" style="height:80%;animation-delay:.20s"></div>
+          <div class="mini-bar bar-yellow" style="height:82%;animation-delay:.25s"></div>
+          <div class="mini-bar bar-yellow" style="height:85%;animation-delay:.30s"></div>
+        </div>
+        <div class="machine-footer">
+          <span class="machine-since">há 3h ativo</span>
+          <span class="badge badge-yellow">⚠ Atenção</span>
+        </div>
+      </div>
+
+      <!-- Máquina 5: Normal -->
+      <div class="machine-card animate-in">
+        <div class="machine-name">Fresadora F-04</div>
+        <div class="machine-kw">
+          17<span class="machine-kw-unit"> kW</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar bar-teal" style="height:32%;animation-delay:.05s"></div>
+          <div class="mini-bar bar-teal" style="height:35%;animation-delay:.10s"></div>
+          <div class="mini-bar bar-teal" style="height:30%;animation-delay:.15s"></div>
+          <div class="mini-bar bar-teal" style="height:38%;animation-delay:.20s"></div>
+          <div class="mini-bar bar-teal" style="height:36%;animation-delay:.25s"></div>
+          <div class="mini-bar bar-teal" style="height:40%;animation-delay:.30s"></div>
+        </div>
+        <div class="machine-footer">
+          <span class="machine-since">há 5h ativo</span>
+          <span class="badge badge-green">● Normal</span>
+        </div>
+      </div>
+
+      <!-- Máquina 6: Normal -->
+      <div class="machine-card animate-in">
+        <div class="machine-name">Robô Solda RS-02</div>
+        <div class="machine-kw">
+          43<span class="machine-kw-unit"> kW</span>
+        </div>
+        <div class="mini-bars">
+          <div class="mini-bar bar-teal" style="height:75%;animation-delay:.05s"></div>
+          <div class="mini-bar bar-teal" style="height:72%;animation-delay:.10s"></div>
+          <div class="mini-bar bar-teal" style="height:80%;animation-delay:.15s"></div>
+          <div class="mini-bar bar-teal" style="height:78%;animation-delay:.20s"></div>
+          <div class="mini-bar bar-teal" style="height:82%;animation-delay:.25s"></div>
+          <div class="mini-bar bar-teal" style="height:85%;animation-delay:.30s"></div>
+        </div>
+        <div class="machine-footer">
+          <span class="machine-since">há 2h ativo</span>
+          <span class="badge badge-green">● Normal</span>
+        </div>
+      </div>
+
+    </div><!-- fim machines-grid -->
+
+    <!-- Relatório ESG do Mês -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom: 20px;">
+        Relatório ESG — Junho 2026
+        <span class="badge badge-green">ISO 50001</span>
+      </div>
+      <div class="esg-bars">
+
+        <div class="esg-bar-row">
+          <div class="esg-bar-header">
+            <span class="esg-bar-label">CO₂ evitado (4,2 t / meta 5 t)</span>
+            <span class="esg-bar-pct">84%</span>
+          </div>
+          <div class="esg-bar-track">
+            <div class="esg-bar-fill" style="width: 0%" data-width="84"></div>
+          </div>
+        </div>
+
+        <div class="esg-bar-row">
+          <div class="esg-bar-header">
+            <span class="esg-bar-label">Eficiência energética</span>
+            <span class="esg-bar-pct">91%</span>
+          </div>
+          <div class="esg-bar-track">
+            <div class="esg-bar-fill" style="width: 0%" data-width="91"></div>
+          </div>
+        </div>
+
+        <div class="esg-bar-row">
+          <div class="esg-bar-header">
+            <span class="esg-bar-label">Conformidade ISO 50001</span>
+            <span class="esg-bar-pct" style="color:var(--teal);">100% <span class="badge badge-teal" style="font-size:10px;padding:2px 8px;">Aprovado</span></span>
+          </div>
+          <div class="esg-bar-track">
+            <div class="esg-bar-fill" style="width: 0%;background:linear-gradient(90deg,var(--teal),var(--teal-dk))" data-width="100"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     5. CENTRAL DE ALERTAS
+     ============================================================ -->
+<section id="alertas" class="section" style="padding-top: 60px;">
+  <div class="section-container">
+
+    <!-- Cabeçalho -->
+    <div class="section-header">
+      <span class="section-tag">Alertas</span>
+      <span class="badge-count" id="alert-count">2</span>
+      <div class="section-divider"></div>
+    </div>
+
+    <div class="alert-list">
+
+      <!-- Alerta 1: CRÍTICO -->
+      <div class="alert-card critico" id="alerta-critico">
+        <div class="alert-icon">🔴</div>
+        <div class="alert-body">
+          <div class="alert-title">CRÍTICO — Sobrecarga de Circuito</div>
+          <div class="alert-desc">Vaga 12 ultrapassou 80% da capacidade do circuito — Ed. Residencial Boa Vista</div>
+          <div class="alert-meta">
+            <span class="badge badge-red">Crítico</span>
+            <span class="alert-time">há 4 min</span>
+          </div>
+        </div>
+        <div class="alert-actions">
+          <button class="btn-teal" id="btn-limitar" onclick="resolverAlerta()">Limitar carga</button>
+        </div>
+      </div>
+
+      <!-- Alerta 2: ATENÇÃO -->
+      <div class="alert-card atencao">
+        <div class="alert-icon">🟡</div>
+        <div class="alert-body">
+          <div class="alert-title">ATENÇÃO — Consumo Elevado</div>
+          <div class="alert-desc">Máquina Prensa P-07: consumo 18% acima da média histórica — Brose, SJP</div>
+          <div class="alert-meta">
+            <span class="badge badge-yellow">Atenção</span>
+            <span class="alert-time">há 2h</span>
+          </div>
+        </div>
+        <div class="alert-actions">
+          <button class="btn-ghost">Ver detalhes</button>
+        </div>
+      </div>
+
+      <!-- Alerta 3: INFO / Resolvido -->
+      <div class="alert-card info resolvido">
+        <div class="alert-icon">🟢</div>
+        <div class="alert-body">
+          <div class="alert-title" style="color:var(--muted);">INFO — Relatório Gerado</div>
+          <div class="alert-desc" style="color:var(--muted);">Relatório mensal gerado com sucesso — Ed. Aurora · junho 2026</div>
+          <div class="alert-meta">
+            <span class="badge badge-green">Resolvido</span>
+            <span class="alert-time">ontem, 23h59</span>
+          </div>
+        </div>
+        <div class="alert-actions">
+          <button class="btn-ghost" style="opacity:0.5;cursor:default;">Visualizar</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     FAB — BOTÃO FLUTUANTE "GERAR RATEIO"
+     ============================================================ -->
+<button class="fab" onclick="abrirModal()" aria-label="Gerar Rateio">
+  💰 Gerar Rateio
+</button>
+
+
+<!-- ============================================================
+     6. MODAL DE RATEIO
+     ============================================================ -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="modal">
+
+    <div class="modal-header">
+      <div class="modal-title" id="modal-titulo">
+        💰 Rateio — Junho 2026 — Ed. Aurora
+      </div>
+      <button class="modal-close" onclick="fecharModal()" aria-label="Fechar modal">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Unidade</th>
+              <th>Morador</th>
+              <th>Consumo (kWh)</th>
+              <th>Valor (R$)</th>
+              <th>Pagamento</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>101</td>
+              <td>Carlos M. Ferreira</td>
+              <td>87,4</td>
+              <td>R$ 80,41</td>
+              <td><span class="badge badge-green">Pago</span></td>
+            </tr>
+            <tr>
+              <td>201</td>
+              <td>Patrícia S. Lima</td>
+              <td>124,6</td>
+              <td>R$ 114,63</td>
+              <td><span class="badge badge-green">Pago</span></td>
+            </tr>
+            <tr>
+              <td>301</td>
+              <td>Arthur R. Souza</td>
+              <td>96,2</td>
+              <td>R$ 88,50</td>
+              <td><span class="badge badge-teal">Aguardando</span></td>
+            </tr>
+            <tr>
+              <td>302</td>
+              <td>Mariana C. Alves</td>
+              <td>43,8</td>
+              <td>R$ 40,30</td>
+              <td><span class="badge badge-green">Pago</span></td>
+            </tr>
+            <tr>
+              <td>403</td>
+              <td>Roberto P. Nunes</td>
+              <td>112,0</td>
+              <td>R$ 103,04</td>
+              <td><span class="badge badge-yellow">Pendente</span></td>
+            </tr>
+            <tr>
+              <td>502</td>
+              <td>Fernanda G. Costa</td>
+              <td>67,5</td>
+              <td>R$ 62,10</td>
+              <td><span class="badge badge-green">Pago</span></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2"><strong>Total do mês</strong></td>
+              <td><strong>531,5 kWh</strong></td>
+              <td class="total-val"><strong>R$ 488,98</strong></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div><!-- fim modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="fecharModal()">Fechar</button>
+      <button class="btn-teal" onclick="exportarExtrato()">📧 Exportar Extrato</button>
+    </div>
+
+  </div>
+</div><!-- fim modal-overlay -->
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">✓ Extrato enviado por e-mail!</div>
+
+
+<!-- ============================================================
+     7. FOOTER
+     ============================================================ -->
+<footer id="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+
+      <div>
+        <div class="footer-brand-name">SMART<span>CHARGE</span></div>
+        <div class="footer-tagline">Telemetria energética &amp; recarga inteligente de VEs para infraestruturas legadas</div>
+      </div>
+
+      <div class="footer-links">
+        <a href="#">Documentação</a>
+        <a href="#">Suporte</a>
+        <a href="#">LGPD</a>
+        <a href="#">API</a>
+      </div>
+
+    </div>
+    <div class="footer-bottom">
+      UTFPR · Engenharia Elétrica · Curitiba · 2026 &nbsp;|&nbsp; SmartCharge Platform v2.4.1
+    </div>
+  </div>
+</footer>
+
+
+<!-- ============================================================
+     JAVASCRIPT — Toda interatividade e dados simulados
+     ============================================================ -->
+<script>
+  /* ======================================================
+     DATA ATUAL EM PORTUGUÊS
+     ====================================================== */
+  (function() {
+    const dias   = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+    const meses  = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const agora  = new Date();
+    const txt    = `${dias[agora.getDay()]}, ${agora.getDate()} de ${meses[agora.getMonth()]} de ${agora.getFullYear()}`;
+    document.getElementById('data-hoje').textContent = 'Aqui está o resumo do seu ecossistema SmartCharge. · ' + txt;
+  })();
+
+
+  /* ======================================================
+     ANIMAÇÃO COUNT-UP DOS KPIs
+     Conta de 0 até o valor final em ~1200ms
+     ====================================================== */
+  function countUp(el, target, duration, prefix, suffix) {
+    const start    = performance.now();
+    const isFloat  = String(target).includes('.');
+    prefix = prefix || '';
+    suffix = suffix || '';
+
+    function update(now) {
+      const elapsed  = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // Easing ease-out-cubic
+      const eased    = 1 - Math.pow(1 - progress, 3);
+      const current  = isFloat
+        ? (eased * target).toFixed(1)
+        : Math.round(eased * target).toLocaleString('pt-BR');
+      el.textContent = prefix + current + suffix;
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  // Dispara count-up ao carregar
+  window.addEventListener('load', () => {
+    countUp(document.getElementById('kpi-consumo'),  847, 1200);
+    countUp(document.getElementById('kpi-vagas'),     12, 1000);
+    countUp(document.getElementById('kpi-economia'), 3241, 1400);
+    countUp(document.getElementById('kpi-alertas'),    2,  600);
+
+    // Barra de progresso das vagas (25%)
+    setTimeout(() => {
+      document.getElementById('kpi-vagas-bar').style.width = '25%';
+    }, 200);
+
+    // Anima as barras dos condomínios e ESG
+    animarBarras();
+
+    // Anima o gráfico SVG de consumo
+    animarGrafico();
+
+    // Anima o anel ESG
+    animarESG();
+  });
+
+
+  /* ======================================================
+     ANIMAÇÃO DO GRÁFICO SVG — stroke-dashoffset
+     Desenha a linha suavemente ao carregar
+     ====================================================== */
+  function animarGrafico() {
+    const line    = document.getElementById('chart-line');
+    const circles = document.querySelectorAll('#consumo-chart circle');
+    const labels  = ['cv1','cv2','cv3','cv4','cv5','cv6','cv7'];
+    const ring    = document.getElementById('today-ring');
+
+    // Anima a linha
+    setTimeout(() => {
+      line.style.transition      = 'stroke-dashoffset 1.6s ease';
+      line.style.strokeDashoffset = '0';
+    }, 300);
+
+    // Aparece pontos e labels após a linha
+    setTimeout(() => {
+      circles.forEach((c, i) => {
+        setTimeout(() => {
+          c.style.transition = 'opacity 0.3s';
+          c.setAttribute('opacity', '1');
+        }, i * 80);
+      });
+      labels.forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) { el.style.transition = 'opacity 0.3s'; el.setAttribute('opacity', '1'); }
+        }, i * 80);
+      });
+      if (ring) { ring.style.transition = 'opacity 0.5s'; ring.setAttribute('opacity','1'); }
+    }, 1900);
+  }
+
+
+  /* ======================================================
+     ANIMAÇÃO DAS BARRAS DE PROGRESSO
+     Anima width de 0 até o valor data-width
+     ====================================================== */
+  function animarBarras() {
+    document.querySelectorAll('[data-width]').forEach((el, i) => {
+      setTimeout(() => {
+        el.style.width = el.dataset.width + '%';
+      }, 200 + i * 80);
+    });
+  }
+
+
+  /* ======================================================
+     ANEL ESG ANIMADO (SVG stroke-dashoffset)
+     O círculo tem perímetro 2π×26 ≈ 163
+     87% de 163 ≈ 141.8 → dashoffset = 163 - 141.8 = 21.2
+     ====================================================== */
+  function animarESG() {
+    const arc   = document.getElementById('esg-arc');
+    const perim = 163;
+    const pct   = 0.87;
+    const offset = perim - perim * pct;
+
+    setTimeout(() => {
+      arc.style.transition      = 'stroke-dashoffset 1.5s ease';
+      arc.style.strokeDashoffset = offset;
+    }, 500);
+  }
+
+
+  /* ======================================================
+     VAGAS ATIVAS — dados iniciais e atualização automática
+     Simula 5 vagas com atualização a cada 4 segundos
+     ====================================================== */
+  const vagasData = [
+    { id: 'Vaga 04', unidade: 'Unidade 301 — Aurora',   kw: 7.4  },
+    { id: 'Vaga 11', unidade: 'Unidade 502 — Aurora',   kw: 3.7  },
+    { id: 'Vaga 07', unidade: 'Unidade 104 — Boa Vista', kw: 11.0 },
+    { id: 'Vaga 18', unidade: 'Unidade 201 — Lumière',  kw: 7.4  },
+    { id: 'Vaga 31', unidade: 'Unidade 302 — Lumière',  kw: 3.7  },
+  ];
+  const kwOpcoes = [3.7, 7.4, 11.0];
+
+  // Renderiza a lista de vagas
+  function renderVagas() {
+    const lista = document.getElementById('vagas-list');
+    lista.innerHTML = vagasData.map(v => `
+      <div class="vaga-item">
+        <div class="vaga-icon">🚗</div>
+        <div class="vaga-info">
+          <div class="vaga-nome">${v.id} — ${v.unidade}</div>
+          <div class="vaga-kw">Carregando: <span class="kw-val">${v.kw.toFixed(1)} kW</span></div>
+        </div>
+        <span class="badge badge-green">ativo</span>
+        <button class="btn-ghost-sm">Ver</button>
+      </div>
+    `).join('');
+  }
+
+  // Atualiza kW aleatoriamente a cada 4 segundos
+  function atualizarVagas() {
+    vagasData.forEach(v => {
+      v.kw = kwOpcoes[Math.floor(Math.random() * kwOpcoes.length)];
+    });
+    renderVagas();
+  }
+
+  renderVagas();
+  setInterval(atualizarVagas, 4000);
+
+
+  /* ======================================================
+     SPARKLINES DOS KPI — animação extra ao carregar
+     ====================================================== */
+  document.querySelectorAll('.spark-line').forEach(line => {
+    const total = parseFloat(line.getAttribute('stroke-dasharray')) || 240;
+    line.setAttribute('stroke-dashoffset', total);
+    setTimeout(() => {
+      line.style.transition        = `stroke-dashoffset 1.6s ease`;
+      line.style.strokeDashoffset  = '0';
+    }, 400);
+  });
+
+
+  /* ======================================================
+     ALERTA CRÍTICO — Botão "Limitar carga"
+     Transforma o card em "Resolvido" com animação
+     ====================================================== */
+  function resolverAlerta() {
+    const card  = document.getElementById('alerta-critico');
+    const btn   = document.getElementById('btn-limitar');
+    const count = document.getElementById('alert-count');
+
+    // Transição visual
+    card.style.transition = 'all 0.4s ease';
+    card.classList.remove('critico');
+    card.classList.add('resolvido');
+
+    card.querySelector('.alert-icon').textContent = '✅';
+    card.querySelector('.alert-title').textContent = 'RESOLVIDO — Carga Limitada com Sucesso';
+    card.querySelector('.alert-title').style.color = 'var(--green)';
+    card.querySelector('.alert-desc').textContent  = 'Vaga 12 — Ed. Boa Vista: limitada para 50% da capacidade do circuito.';
+
+    const meta = card.querySelector('.alert-meta');
+    meta.innerHTML = `<span class="badge badge-green">✓ Resolvido</span><span class="alert-time">agora</span>`;
+
+    btn.textContent = '✓ Resolvido';
+    btn.style.background = 'var(--green)';
+    btn.disabled = true;
+
+    // Decrementa badge de alertas
+    const n = parseInt(count.textContent) - 1;
+    count.textContent = Math.max(0, n);
+    document.getElementById('kpi-alertas').textContent = Math.max(0, n);
+  }
+
+
+  /* ======================================================
+     MODAL DO RATEIO — Abrir / Fechar
+     ====================================================== */
+  function abrirModal() {
+    document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function fecharModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Fecha ao clicar fora do modal
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) fecharModal();
+  });
+
+  // Fecha com ESC
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') fecharModal();
+  });
+
+
+  /* ======================================================
+     TOAST NOTIFICATION — "Extrato enviado por e-mail!"
+     Aparece 2s depois do clique e desaparece suavemente
+     ====================================================== */
+  function exportarExtrato() {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+
+  /* ======================================================
+     NAVBAR — Destaca link ativo ao rolar a página
+     ====================================================== */
+  const navLinks = document.querySelectorAll('.nav-links a');
+  const sections = document.querySelectorAll('section[id], footer[id]');
+
+  function onScroll() {
+    let current = '';
+    sections.forEach(sec => {
+      if (window.scrollY >= sec.offsetTop - 100) {
+        current = sec.getAttribute('id');
+      }
+    });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+
+  /* ======================================================
+     INTERSECTION OBSERVER — Anima barras/gráficos quando
+     as seções entram na viewport (scroll reveal)
+     ====================================================== */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Reativa animação nas barras de progresso visíveis
+        entry.target.querySelectorAll('[data-width]').forEach(el => {
+          el.style.width = el.dataset.width + '%';
+        });
+        // Revela cards com classe animate-in
+        entry.target.querySelectorAll('.animate-in').forEach(card => {
+          card.style.animationPlayState = 'running';
+        });
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('section').forEach(sec => observer.observe(sec));
+
+</script>
+
+</body>
+</html>
