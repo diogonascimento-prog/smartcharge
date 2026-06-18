@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervisório Elétrico — ENGETÉCNICA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090F;--panel:#0C1420;--card:#0E1829;--border:#1A3050;
+  --accent:#00B4FF;--green:#00E5A0;--yellow:#FFBD00;--red:#FF4040;--purple:#A855F7;
+  --text:#C8DFF0;--dim:#5A7B95;--mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--panel)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+
+/* ── HEADER ── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:200;height:52px;
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.hdr-logo{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:.5px;white-space:nowrap}
+.hdr-plant{font-size:11px;color:var(--dim);border-left:1px solid var(--border);padding-left:14px;white-space:nowrap}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.hdr-clock{font-family:var(--mono);font-size:12px;color:var(--text);background:rgba(0,180,255,.07);padding:4px 9px;border-radius:6px;border:1px solid rgba(0,180,255,.14)}
+.hdr-kpi{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+.hdr-kpi-val{font-family:var(--mono);font-size:14px;font-weight:600}
+.hdr-kpi-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.hdr-sep{width:1px;height:26px;background:var(--border)}
+.alarm-badge{display:flex;align-items:center;gap:5px;background:rgba(255,64,64,.1);border:1px solid rgba(255,64,64,.28);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--red)}
+.blink-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ── LAYOUT ── */
+.layout{display:flex;margin-top:52px;min-height:calc(100vh - 52px)}
+
+/* ── SIDEBAR ── */
+aside{width:176px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:10px 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+.aside-lbl{padding:4px 12px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-top:10px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:12px;font-weight:500;color:var(--dim);transition:background .15s,color .15s;position:relative}
+.nav-item:hover{background:rgba(0,180,255,.07);color:var(--text)}
+.nav-item.active{background:rgba(0,180,255,.1);color:var(--accent)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.n-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.nd-on{background:var(--green);animation:pg 2s infinite}
+.nd-off{background:var(--dim)}
+.nd-warn{background:var(--yellow);animation:py 2s infinite}
+.nd-alarm{background:var(--red);animation:blink .8s infinite}
+@keyframes pg{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.5)}50%{box-shadow:0 0 0 4px rgba(0,229,160,0)}}
+@keyframes py{0%,100%{box-shadow:0 0 0 0 rgba(255,189,0,.5)}50%{box-shadow:0 0 0 4px rgba(255,189,0,0)}}
+
+/* ── MAIN ── */
+main{flex:1;overflow-x:hidden;padding:14px;display:flex;flex-direction:column;gap:12px}
+.sec-lbl{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim)}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.eq-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+
+/* ── CARD ── */
+.eq-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 10px;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .15s;display:flex;flex-direction:column;gap:7px}
+.eq-card:hover{border-color:var(--accent);box-shadow:0 0 18px rgba(0,180,255,.13);transform:translateY(-2px)}
+.eq-card.c-warn{border-color:rgba(255,189,0,.3)}
+.eq-card.c-alarm{border-color:rgba(255,64,64,.35);box-shadow:0 0 12px rgba(255,64,64,.1)}
+.eq-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
+.eq-name{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;line-height:1.3}
+.eq-st{display:flex;align-items:center;gap:3px;font-size:9px;font-weight:700;white-space:nowrap}
+.st-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.s-on .st-dot{background:var(--green);animation:pg 2s infinite}.s-on{color:var(--green)}
+.s-off .st-dot{background:var(--dim)}.s-off{color:var(--dim)}
+.s-warn .st-dot{background:var(--yellow);animation:py 2s infinite}.s-warn{color:var(--yellow)}
+.s-alarm .st-dot{background:var(--red);animation:blink .8s infinite}.s-alarm{color:var(--red)}
+
+/* ── GAUGE SVG ── */
+.gauge-svg{width:100%}
+.g-bg{fill:none;stroke:#152A40;stroke-width:9;stroke-linecap:round}
+.g-zg{fill:none;stroke:#00E5A0;stroke-width:9;opacity:.17}
+.g-zy{fill:none;stroke:#FFBD00;stroke-width:9;opacity:.17}
+.g-zr{fill:none;stroke:#FF4040;stroke-width:9;opacity:.17}
+.g-fill{fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .85s ease,stroke .3s}
+.g-needle{stroke:#D0E8F8;stroke-width:2;stroke-linecap:round}
+.g-ctr{fill:#0E1829;stroke:#00B4FF;stroke-width:1.5}
+.g-min,.g-max{font-size:8px;fill:#3A6080;font-family:var(--mono)}
+.g-max{text-anchor:end}
+
+/* Value below gauge */
+.gauge-val-row{display:flex;align-items:baseline;justify-content:center;gap:4px;line-height:1}
+.gauge-main-val{font-family:var(--mono);font-size:20px;font-weight:600;color:#E0F0FF;transition:color .3s}
+.gauge-unit{font-size:10px;color:var(--dim)}
+
+/* Mini metrics 2-col grid */
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 6px}
+.mini-m{display:flex;flex-direction:column}
+.mini-lbl{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.3px}
+.mini-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text);transition:color .3s}
+
+/* ── COMPRESSOR CARD ── */
+.comp-kw{font-family:var(--mono);font-size:28px;font-weight:600;text-align:center;line-height:1;transition:color .3s}
+.comp-unit{font-size:11px;color:var(--dim);font-weight:400}
+.comp-off{text-align:center;font-size:18px;font-weight:700;color:var(--dim);letter-spacing:4px;padding:6px 0}
+.pbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--accent));transition:width .85s ease}
+
+/* ── PUMP / GAS CARD ── */
+.meter-main{display:flex;align-items:baseline;gap:4px;justify-content:center}
+.meter-val{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--accent);transition:color .3s}
+.meter-u{font-size:11px;color:var(--dim)}
+
+/* ── MODAL OVERLAY ── */
+.overlay{position:fixed;inset:0;z-index:500;background:rgba(4,8,18,.82);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.overlay.open{opacity:1;visibility:visible}
+.modal{background:#0C1A2E;border:1px solid rgba(0,180,255,.2);border-radius:14px;width:100%;max-width:820px;max-height:90vh;overflow-y:auto;transform:scale(.95);transition:transform .25s}
+.overlay.open .modal{transform:scale(1)}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:700;color:var(--accent)}
+.modal-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.m-close{width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--dim);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;flex-shrink:0}
+.m-close:hover{background:rgba(255,64,64,.15);color:var(--red)}
+.modal-body{padding:18px 20px;display:flex;flex-direction:column;gap:18px}
+.modal-top{display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start}
+.modal-gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.modal-gauge-main{font-family:var(--mono);font-size:24px;font-weight:600;color:#E0F0FF}
+.modal-gauge-unit{font-size:11px;color:var(--dim)}
+
+/* Modal params table */
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.p-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.p-row:nth-child(even){background:rgba(0,180,255,.02);padding-left:6px;padding-right:6px}
+.p-lbl{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:5px}
+.p-val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)}
+.p-c{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Mini chart */
+.chart-wrap{background:rgba(0,0,0,.2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+.chart-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.hist-svg{width:100%;height:70px;display:block}
+.h-area{fill:url(#hg)}
+.h-line{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-linejoin:round}
+.h-grid{stroke:rgba(255,255,255,.06);stroke-width:1}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){.eq-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){aside{display:none}.eq-grid{grid-template-columns:repeat(2,1fr)}.hdr-kpi{display:none}}
+@media(max-width:500px){.eq-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     HEADER
+══════════════════════════════ -->
+<header>
+  <div class="hdr-left">
+    <div class="hdr-logo">⚡ SUPERVISÓRIO ELÉTRICO</div>
+    <div class="hdr-plant">Brose — São José dos Pinhais · PR</div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-val" id="h-kw" style="color:var(--accent)">— kW</span>
+      <span class="hdr-kpi-lbl">Ativa Total</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-val" id="h-kvar" style="color:var(--purple)">— kVAr</span>
+      <span class="hdr-kpi-lbl">Reativa Total</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-kpi">
+      <span class="hdr-kpi-val" id="h-fp" style="color:var(--green)">—</span>
+      <span class="hdr-kpi-lbl">FP Geral</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="alarm-badge">
+      <div class="blink-dot"></div>
+      <span id="h-alarms">1 ALARME</span>
+    </div>
+    <div class="hdr-clock" id="h-clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════
+     LAYOUT
+══════════════════════════════ -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="aside-lbl">Visão Geral</div>
+    <div class="nav-item active"><div class="n-dot nd-on"></div>Dashboard</div>
+    <div class="aside-lbl">Subestações</div>
+    <div class="nav-item" onclick="scrollTo(0,0)"><div class="n-dot nd-on"></div>Cabine Primária</div>
+    <div class="nav-item"><div class="n-dot nd-on"></div>Subestação 1</div>
+    <div class="nav-item"><div class="n-dot nd-warn"></div>Subestação 2</div>
+    <div class="nav-item"><div class="n-dot nd-on"></div>Subestação 3</div>
+    <div class="nav-item"><div class="n-dot nd-on"></div>Subestação 4</div>
+    <div class="aside-lbl">Equipamentos</div>
+    <div class="nav-item"><div class="n-dot nd-on"></div>Sala Comp 1</div>
+    <div class="nav-item"><div class="n-dot nd-alarm"></div>Sala Comp 2</div>
+    <div class="nav-item"><div class="n-dot nd-on"></div>Casa de Bombas</div>
+    <div class="nav-item"><div class="n-dot nd-on"></div>Cisterna</div>
+    <div class="aside-lbl">Relatórios</div>
+    <div class="nav-item"><div class="n-dot nd-off"></div>Consumo Mensal</div>
+    <div class="nav-item"><div class="n-dot nd-off"></div>Demanda</div>
+    <div class="nav-item"><div class="n-dot nd-off"></div>Qualidade</div>
+  </aside>
+
+  <!-- MAIN CONTENT — gerado por JS -->
+  <main id="main"></main>
+
+</div><!-- fim layout -->
+
+<!-- ══════════════════════════════
+     MODAL
+══════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="m-title">—</div>
+        <div class="modal-sub"  id="m-sub">—</div>
+      </div>
+      <button class="m-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     JAVASCRIPT
+══════════════════════════════ -->
+<script>
+/* =========================================================
+   CONSTANTES DO GAUGE — geometria SVG
+   cx=80, cy=90, r=68, start=145°, sweep=250°
+   ========================================================= */
+const G = { cx:80, cy:90, r:68, start:145, sweep:250, nr:50 };
+const ARC_LEN = G.r * G.sweep * Math.PI / 180; // ≈ 296.7 px
+
+function toRad(d){ return d * Math.PI / 180; }
+
+function ptG(deg){
+  const a = toRad(deg % 360);
+  return [G.cx + G.r*Math.cos(a), G.cy + G.r*Math.sin(a)];
+}
+function ptN(deg){
+  const a = toRad(deg % 360);
+  return [G.cx + G.nr*Math.cos(a), G.cy + G.nr*Math.sin(a)];
+}
+function arcD(aDeg, bDeg){
+  const [ax,ay] = ptG(aDeg);
+  const [bx,by] = ptG(bDeg);
+  const large = (bDeg - aDeg) > 180 ? 1 : 0;
+  return `M${ax.toFixed(2)},${ay.toFixed(2)} A${G.r},${G.r},0,${large},1,${bx.toFixed(2)},${by.toFixed(2)}`;
+}
+
+const FULL_D   = arcD(G.start, G.start + G.sweep);
+const GREEN_D  = arcD(G.start, G.start + G.sweep*0.60);
+const YELLOW_D = arcD(G.start + G.sweep*0.60, G.start + G.sweep*0.80);
+const RED_D    = arcD(G.start + G.sweep*0.80, G.start + G.sweep);
+
+function needleXY(pct){
+  const deg = G.start + Math.min(1,Math.max(0,pct)) * G.sweep;
+  return ptN(deg);
+}
+function fillColor(pct){
+  return pct <= .60 ? '#00E5A0' : pct <= .80 ? '#FFBD00' : '#FF4040';
+}
+
+/* =========================================================
+   DADOS DOS EQUIPAMENTOS
+   ========================================================= */
+const FEEDERS = [
+  {
+    id:'copel', label:'COPEL', sub:'Entrada Principal — 13,8 kV',
+    max:1200, noise:.035,
+    b:{ kw:820, kvar:312, kva:878, fp:.934, amp:42.5, volt:13800, hz:60.0, demMax:950, demMaxFpi:880, contrato:1200, consumo:142800, projetado:148500 },
+    status:'normal'
+  },
+  {
+    id:'sub1', label:'RAMAL SUB 1', sub:'Trafo 500 kVA · 380 V',
+    max:400, noise:.045,
+    b:{ kw:185, kvar:62, kva:195, fp:.948, amp:285, volt:381, hz:60.0, demMax:210, demMaxFpi:200, contrato:400, consumo:34200 },
+    status:'normal'
+  },
+  {
+    id:'sub2', label:'RAMAL SUB 2', sub:'Trafo 500 kVA · 380 V',
+    max:400, noise:.050,
+    b:{ kw:215, kvar:88, kva:231, fp:.931, amp:335, volt:379, hz:60.0, demMax:240, demMaxFpi:228, contrato:400, consumo:41600 },
+    status:'warn'
+  },
+  {
+    id:'sub3', label:'RAMAL SUB 3', sub:'Trafo 500 kVA · 380 V',
+    max:400, noise:.040,
+    b:{ kw:198, kvar:71, kva:210, fp:.943, amp:310, volt:380, hz:60.1, demMax:225, demMaxFpi:214, contrato:400, consumo:38900 },
+    status:'normal'
+  },
+  {
+    id:'sub4', label:'RAMAL SUB 4', sub:'Trafo 300 kVA · 380 V',
+    max:300, noise:.040,
+    b:{ kw:172, kvar:58, kva:182, fp:.945, amp:268, volt:382, hz:59.9, demMax:195, demMaxFpi:186, contrato:300, consumo:32100 },
+    status:'normal'
+  }
+];
+
+const EQUIPMENT = [
+  {
+    id:'comp1', label:'COMPRESSOR\n75 CV - 1', sub:'Sala Compressores', type:'comp',
+    max:56, noise:.045, status:'on',
+    b:{ kw:52.3, amp:88.4, temp:72, pSuc:.22, pDesc:8.42, vazao:9.8, horas:4812 }
+  },
+  {
+    id:'comp2', label:'COMPRESSOR\n75 CV - 2', sub:'Sala Compressores', type:'comp',
+    max:56, noise:0, status:'off',
+    b:{ kw:0, amp:0, temp:41, pSuc:.10, pDesc:8.10, vazao:0, horas:3241 }
+  },
+  {
+    id:'comp3', label:'COMPRESSOR\n90 CV - 3', sub:'Sala Compressores', type:'comp',
+    max:67, noise:.040, status:'alarm',
+    b:{ kw:63.7, amp:102.1, temp:84, pSuc:.31, pDesc:8.63, vazao:12.4, horas:6203 }
+  },
+  {
+    id:'bombas', label:'CASA DE\nBOMBAS', sub:'Cisterna Principal', type:'pump',
+    max:30, noise:.060, status:'on',
+    b:{ kw:18.4, amp:32.1, instM3:142.8, maxM3:187.3, vazao:28.6, pressao:3.2 }
+  },
+  {
+    id:'n2', label:'NITROGÊNIO', sub:'Medidor de Gás', type:'gas',
+    noise:.015, status:'normal',
+    b:{ instM3:284.6, maxM3:412.1, fluxo:1.24 }
+  }
+];
+
+/* Estado atual (com ruído aplicado) */
+const state = {};
+const history = {}; // circular buffer de 30 valores de kW
+
+function initState(){
+  [...FEEDERS,...EQUIPMENT].forEach(eq => {
+    state[eq.id] = { ...eq.b };
+    // histórico com valores ao redor do base
+    const baseKw = eq.b.kw ?? eq.b.instM3 ?? 0;
+    history[eq.id] = Array.from({length:30}, (_,i) => baseKw * (0.88 + Math.random()*.24));
+  });
+}
+
+function noise(val, pct){
+  return val * (1 + (Math.random()*2-1)*pct);
+}
+
+function applyNoise(){
+  [...FEEDERS,...EQUIPMENT].forEach(eq => {
+    if(eq.noise === 0) return;
+    const s = state[eq.id];
+    const b = eq.b;
+    if(b.kw !== undefined){
+      s.kw    = Math.max(0, noise(b.kw, eq.noise));
+      s.kvar  = b.kvar !== undefined ? Math.max(0, noise(b.kvar, eq.noise*1.2)) : undefined;
+      if(s.kw && s.kvar) s.kva = Math.sqrt(s.kw**2 + s.kvar**2);
+      if(s.kva && s.kva > 0) s.fp = Math.min(.999, s.kw / s.kva);
+      if(b.amp) s.amp = Math.max(0, noise(b.amp, eq.noise*.8));
+      if(b.volt) s.volt = noise(b.volt, .005);
+      if(b.hz)   s.hz  = noise(b.hz, .003);
+      if(b.temp) s.temp = noise(b.temp, eq.noise*.5);
+      if(b.pDesc) s.pDesc = noise(b.pDesc, .02);
+      if(b.vazao) s.vazao = noise(b.vazao, eq.noise);
+      history[eq.id].push(s.kw);
+    } else if(b.instM3 !== undefined){
+      s.instM3 = Math.max(0, noise(b.instM3, eq.noise));
+      history[eq.id].push(s.instM3);
+    }
+    if(history[eq.id].length > 30) history[eq.id].shift();
+  });
+}
+
+/* =========================================================
+   GERAÇÃO DE CARDS
+   ========================================================= */
+function statusLabel(st){
+  const m = {normal:'NORMAL',on:'OPERANDO',off:'PARADO',warn:'ATENÇÃO',alarm:'ALARME'};
+  return m[st]||st;
+}
+function statusClass(st){
+  return {normal:'s-on',on:'s-on',off:'s-off',warn:'s-warn',alarm:'s-alarm'}[st]||'s-on';
+}
+function cardClass(st){
+  return {warn:'c-warn',alarm:'c-alarm'}[st]||'';
+}
+
+function gaugeSVG(id, pct, max){
+  const offset = ARC_LEN * (1 - Math.min(1, Math.max(0, pct)));
+  const [nx,ny] = needleXY(pct);
+  const fc = fillColor(pct);
+  return `<svg class="gauge-svg" viewBox="0 0 160 134">
+    <path class="g-bg"   d="${FULL_D}"/>
+    <path class="g-zg"   d="${GREEN_D}"/>
+    <path class="g-zy"   d="${YELLOW_D}"/>
+    <path class="g-zr"   d="${RED_D}"/>
+    <path class="g-fill" id="gf-${id}" d="${FULL_D}"
+      stroke="${fc}" stroke-dasharray="${ARC_LEN.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>
+    <line class="g-needle" id="gn-${id}" x1="${G.cx}" y1="${G.cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}"/>
+    <circle class="g-ctr" cx="${G.cx}" cy="${G.cy}" r="5"/>
+    <text x="14"  y="131" class="g-min">0</text>
+    <text x="146" y="131" class="g-max">${max}</text>
+  </svg>`;
+}
+
+function feederCard(eq){
+  const s = state[eq.id];
+  const pct = (s.kw||0) / eq.max;
+  const sc  = statusClass(eq.status);
+  const cc  = cardClass(eq.status);
+  const volt = eq.b.volt >= 1000 ? (eq.b.volt/1000).toFixed(1)+' kV' : (s.volt||eq.b.volt).toFixed(0)+' V';
+  return `<div class="eq-card ${cc}" onclick="openModal('${eq.id}')">
+    <div class="eq-hdr">
+      <div class="eq-name">${eq.label}</div>
+      <div class="eq-st ${sc}"><div class="st-dot"></div>${statusLabel(eq.status)}</div>
+    </div>
+    ${gaugeSVG(eq.id, pct, eq.max)}
+    <div class="gauge-val-row">
+      <span class="gauge-main-val" id="gv-${eq.id}">${(s.kw||0).toFixed(1)}</span>
+      <span class="gauge-unit">kW</span>
+    </div>
+    <div class="mini-grid">
+      <div class="mini-m"><span class="mini-lbl">Reativo</span><span class="mini-val" id="mv-kvar-${eq.id}">${(s.kvar||0).toFixed(0)} <small style="color:var(--dim);font-size:9px">kVAr</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Fat. Pot.</span><span class="mini-val" id="mv-fp-${eq.id}">${(s.fp||0).toFixed(3)}</span></div>
+      <div class="mini-m"><span class="mini-lbl">Corrente</span><span class="mini-val" id="mv-amp-${eq.id}">${(s.amp||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">A</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Tensão</span><span class="mini-val">${volt}</span></div>
+    </div>
+  </div>`;
+}
+
+function compCard(eq){
+  const s  = state[eq.id];
+  const sc = statusClass(eq.status);
+  const cc = cardClass(eq.status);
+  const on = eq.status !== 'off';
+  const pct = on ? s.kw/eq.max : 0;
+  const kw  = on ? s.kw.toFixed(1) : '0.0';
+  const kwColor = eq.status==='alarm' ? 'var(--red)' : eq.status==='warn' ? 'var(--yellow)' : 'var(--accent)';
+  return `<div class="eq-card ${cc}" onclick="openModal('${eq.id}')">
+    <div class="eq-hdr">
+      <div class="eq-name" style="white-space:pre-line">${eq.label}</div>
+      <div class="eq-st ${sc}"><div class="st-dot"></div>${on?statusLabel(eq.status):'OFF'}</div>
+    </div>
+    ${on
+      ? `<div class="comp-kw" id="gv-${eq.id}" style="color:${kwColor}">${kw}<span class="comp-unit"> kW</span></div>
+         <div class="pbar"><div class="pbar-fill" id="gf-${eq.id}" style="width:${(pct*100).toFixed(1)}%"></div></div>`
+      : `<div class="comp-off">OFF</div>`
+    }
+    <div class="mini-grid">
+      <div class="mini-m"><span class="mini-lbl">Corrente</span><span class="mini-val" id="mv-amp-${eq.id}">${on?(s.amp||0).toFixed(1):'—'} <small style="color:var(--dim);font-size:9px">${on?'A':''}</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Temp.</span><span class="mini-val" id="mv-temp-${eq.id}" style="${s.temp>80?'color:var(--red)':''}">${s.temp.toFixed(0)} <small style="color:var(--dim);font-size:9px">°C</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">P. Desc.</span><span class="mini-val" id="mv-pd-${eq.id}">${on?(s.pDesc||0).toFixed(1):'—'} <small style="color:var(--dim);font-size:9px">${on?'bar':''}</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Vazão</span><span class="mini-val" id="mv-vz-${eq.id}">${on?(s.vazao||0).toFixed(1):'—'} <small style="color:var(--dim);font-size:9px">${on?'m³/h':''}</small></span></div>
+    </div>
+  </div>`;
+}
+
+function pumpCard(eq){
+  const s  = state[eq.id];
+  const sc = statusClass(eq.status);
+  const pct = (s.kw||0)/eq.max;
+  return `<div class="eq-card" onclick="openModal('${eq.id}')">
+    <div class="eq-hdr">
+      <div class="eq-name" style="white-space:pre-line">${eq.label}</div>
+      <div class="eq-st ${sc}"><div class="st-dot"></div>OPERANDO</div>
+    </div>
+    <div class="meter-main">
+      <span class="meter-val" id="gv-${eq.id}">${(s.kw||0).toFixed(1)}</span>
+      <span class="meter-u">kW</span>
+    </div>
+    <div class="pbar"><div class="pbar-fill" id="gf-${eq.id}" style="width:${(pct*100).toFixed(1)}%"></div></div>
+    <div class="mini-grid">
+      <div class="mini-m"><span class="mini-lbl">Vol. Inst.</span><span class="mini-val" id="mv-inst-${eq.id}">${(s.instM3||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Vol. Máx.</span><span class="mini-val">${(s.maxM3||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Vazão</span><span class="mini-val" id="mv-vz-${eq.id}">${(s.vazao||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³/h</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Pressão</span><span class="mini-val">${(s.pressao||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">bar</small></span></div>
+    </div>
+  </div>`;
+}
+
+function gasCard(eq){
+  const s = state[eq.id];
+  return `<div class="eq-card" onclick="openModal('${eq.id}')">
+    <div class="eq-hdr">
+      <div class="eq-name">${eq.label}</div>
+      <div class="eq-st s-on"><div class="st-dot"></div>NORMAL</div>
+    </div>
+    <div class="meter-main">
+      <span class="meter-val" id="gv-${eq.id}">${(s.instM3||0).toFixed(1)}</span>
+      <span class="meter-u">m³</span>
+    </div>
+    <div class="pbar"><div class="pbar-fill" id="gf-${eq.id}" style="width:${((s.instM3/s.maxM3)*100).toFixed(1)}%;background:linear-gradient(90deg,var(--purple),var(--accent))"></div></div>
+    <div class="mini-grid">
+      <div class="mini-m"><span class="mini-lbl">Vol. Inst.</span><span class="mini-val" id="mv-inst-${eq.id}">${(s.instM3||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Vol. Máx.</span><span class="mini-val">${(s.maxM3||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Fluxo</span><span class="mini-val" id="mv-vz-${eq.id}">${(s.fluxo||0).toFixed(2)} <small style="color:var(--dim);font-size:9px">m³/h</small></span></div>
+      <div class="mini-m"><span class="mini-lbl">Consumo/h</span><span class="mini-val">${((s.instM3||0)/720).toFixed(2)} <small style="color:var(--dim);font-size:9px">m³</small></span></div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   RENDER INICIAL
+   ========================================================= */
+function renderAll(){
+  const main = document.getElementById('main');
+
+  const feedersHTML = FEEDERS.map(feederCard).join('');
+  const eqHTML = EQUIPMENT.map(eq => {
+    if(eq.type==='comp')  return compCard(eq);
+    if(eq.type==='pump')  return pumpCard(eq);
+    if(eq.type==='gas')   return gasCard(eq);
+    return '';
+  }).join('');
+
+  main.innerHTML = `
+    <div class="sec-lbl">Medidores de Tensão — Cabine Primária e Ramais</div>
+    <div class="eq-grid">${feedersHTML}</div>
+    <div class="sec-lbl">Equipamentos — Sala de Compressores · Utilidades</div>
+    <div class="eq-grid">${eqHTML}</div>
+  `;
+}
+
+/* =========================================================
+   ATUALIZAÇÃO EM TEMPO REAL — a cada 1.5s
+   ========================================================= */
+function updateDOM(){
+  // Feeders: gauge dashoffset + needle + valores
+  FEEDERS.forEach(eq => {
+    const s = state[eq.id];
+    const pct = (s.kw||0)/eq.max;
+    const offset = ARC_LEN * (1 - Math.min(1,Math.max(0,pct)));
+    const [nx,ny] = needleXY(pct);
+    const fc = fillColor(pct);
+
+    const gfEl = document.getElementById(`gf-${eq.id}`);
+    const gnEl = document.getElementById(`gn-${eq.id}`);
+    const gvEl = document.getElementById(`gv-${eq.id}`);
+    if(gfEl){ gfEl.style.strokeDashoffset = offset.toFixed(1); gfEl.style.stroke = fc; }
+    if(gnEl){ gnEl.setAttribute('x2', nx.toFixed(1)); gnEl.setAttribute('y2', ny.toFixed(1)); }
+    if(gvEl) gvEl.textContent = (s.kw||0).toFixed(1);
+
+    const kvarEl = document.getElementById(`mv-kvar-${eq.id}`);
+    const fpEl   = document.getElementById(`mv-fp-${eq.id}`);
+    const ampEl  = document.getElementById(`mv-amp-${eq.id}`);
+    if(kvarEl && s.kvar !== undefined) kvarEl.innerHTML = `${s.kvar.toFixed(0)} <small style="color:var(--dim);font-size:9px">kVAr</small>`;
+    if(fpEl   && s.fp   !== undefined) fpEl.textContent = s.fp.toFixed(3);
+    if(ampEl  && s.amp  !== undefined) ampEl.innerHTML  = `${s.amp.toFixed(1)} <small style="color:var(--dim);font-size:9px">A</small>`;
+  });
+
+  // Compressores
+  EQUIPMENT.filter(e=>e.type==='comp').forEach(eq => {
+    const s = state[eq.id];
+    const on = eq.status !== 'off';
+    if(!on) return;
+    const pct = s.kw/eq.max;
+    const gvEl = document.getElementById(`gv-${eq.id}`);
+    const gfEl = document.getElementById(`gf-${eq.id}`);
+    if(gvEl) gvEl.innerHTML = `${s.kw.toFixed(1)}<span class="comp-unit"> kW</span>`;
+    if(gfEl) gfEl.style.width = (Math.min(1,pct)*100).toFixed(1)+'%';
+    const ampEl  = document.getElementById(`mv-amp-${eq.id}`);
+    const tempEl = document.getElementById(`mv-temp-${eq.id}`);
+    const pdEl   = document.getElementById(`mv-pd-${eq.id}`);
+    const vzEl   = document.getElementById(`mv-vz-${eq.id}`);
+    if(ampEl)  ampEl.innerHTML  = `${(s.amp||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">A</small>`;
+    if(tempEl){ tempEl.innerHTML = `${s.temp.toFixed(0)} <small style="color:var(--dim);font-size:9px">°C</small>`; tempEl.style.color = s.temp>80?'var(--red)':s.temp>70?'var(--yellow)':''; }
+    if(pdEl)   pdEl.innerHTML   = `${(s.pDesc||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">bar</small>`;
+    if(vzEl)   vzEl.innerHTML   = `${(s.vazao||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³/h</small>`;
+  });
+
+  // Bomba
+  const bom = EQUIPMENT.find(e=>e.id==='bombas');
+  if(bom){
+    const s = state['bombas'];
+    const pct = (s.kw||0)/bom.max;
+    const gvEl=document.getElementById('gv-bombas');
+    const gfEl=document.getElementById('gf-bombas');
+    const instEl=document.getElementById('mv-inst-bombas');
+    const vzEl=document.getElementById('mv-vz-bombas');
+    if(gvEl) gvEl.textContent=(s.kw||0).toFixed(1);
+    if(gfEl) gfEl.style.width=(Math.min(1,pct)*100).toFixed(1)+'%';
+    if(instEl) instEl.innerHTML=`${(s.instM3||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³</small>`;
+    if(vzEl)   vzEl.innerHTML=`${(s.vazao||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³/h</small>`;
+  }
+
+  // N2
+  const n2s = state['n2'];
+  const n2eq = EQUIPMENT.find(e=>e.id==='n2');
+  if(n2s && n2eq){
+    const gvEl=document.getElementById('gv-n2');
+    const gfEl=document.getElementById('gf-n2');
+    const instEl=document.getElementById('mv-inst-n2');
+    const vzEl=document.getElementById('mv-vz-n2');
+    const pct=(n2s.instM3||0)/(n2s.maxM3||1);
+    if(gvEl) gvEl.textContent=(n2s.instM3||0).toFixed(1);
+    if(gfEl) gfEl.style.width=(Math.min(1,pct)*100).toFixed(1)+'%';
+    if(instEl) instEl.innerHTML=`${(n2s.instM3||0).toFixed(1)} <small style="color:var(--dim);font-size:9px">m³</small>`;
+    if(vzEl)   vzEl.innerHTML=`${(n2s.fluxo||0).toFixed(2)} <small style="color:var(--dim);font-size:9px">m³/h</small>`;
+  }
+
+  // Header KPIs
+  const totalKw   = FEEDERS.slice(1).reduce((a,f)=>a+(state[f.id].kw||0),0);
+  const totalKvar = FEEDERS.slice(1).reduce((a,f)=>a+(state[f.id].kvar||0),0);
+  const totalKva  = Math.sqrt(totalKw**2+totalKvar**2);
+  const fpGeral   = totalKva>0 ? totalKw/totalKva : 0;
+  document.getElementById('h-kw').textContent   = totalKw.toFixed(0)+' kW';
+  document.getElementById('h-kvar').textContent = totalKvar.toFixed(0)+' kVAr';
+  document.getElementById('h-fp').textContent   = fpGeral.toFixed(3);
+}
+
+/* =========================================================
+   RELÓGIO
+   ========================================================= */
+function updateClock(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('h-clock').textContent =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+/* =========================================================
+   MODAL — abre com detalhes do equipamento
+   ========================================================= */
+function openModal(id){
+  const eq = [...FEEDERS,...EQUIPMENT].find(e=>e.id===id);
+  if(!eq) return;
+  const s = state[id];
+
+  document.getElementById('m-title').textContent = eq.label.replace('\n',' ');
+  document.getElementById('m-sub').textContent   = eq.sub;
+
+  let paramsHTML = '';
+  let gaugeHTML  = '';
+
+  if(eq.max !== undefined && eq.b.kw !== undefined){
+    const pct = Math.min(1,(s.kw||0)/eq.max);
+    const offset = ARC_LEN*(1-pct);
+    const [nx,ny]=needleXY(pct);
+    const fc=fillColor(pct);
+    gaugeHTML=`
+      <div class="modal-gauge-wrap">
+        <svg style="width:200px" viewBox="0 0 160 134">
+          <path class="g-bg" d="${FULL_D}"/>
+          <path class="g-zg" d="${GREEN_D}"/><path class="g-zy" d="${YELLOW_D}"/><path class="g-zr" d="${RED_D}"/>
+          <path class="g-fill" d="${FULL_D}" stroke="${fc}"
+            stroke-dasharray="${ARC_LEN.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>
+          <line class="g-needle" x1="${G.cx}" y1="${G.cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}"/>
+          <circle class="g-ctr" cx="${G.cx}" cy="${G.cy}" r="5"/>
+          <text x="14"  y="131" class="g-min">0</text>
+          <text x="146" y="131" class="g-max">${eq.max}</text>
+        </svg>
+        <div class="modal-gauge-main">${(s.kw||0).toFixed(2)} <span style="font-size:12px;color:var(--dim)">kW</span></div>
+        <div style="font-size:10px;color:var(--dim)">${(pct*100).toFixed(1)}% do contrato</div>
+      </div>`;
+  }
+
+  // Monta linhas de parâmetros
+  const rows = [];
+  if(eq.type==='comp'||!eq.type){
+    if(s.kw  !==undefined) rows.push(['#00B4FF','Pot. Ativa (P)',`${(s.kw||0).toFixed(2)} kW`]);
+    if(s.kvar !==undefined) rows.push(['#A855F7','Pot. Reativa (Q)',`${(s.kvar||0).toFixed(2)} kVAr`]);
+    if(s.kva  !==undefined) rows.push(['#64B5F6','Pot. Aparente (S)',`${(s.kva||0).toFixed(2)} kVA`]);
+    if(s.fp   !==undefined) rows.push([s.fp>=.92?'#00E5A0':'#FFBD00','Fator de Potência',s.fp.toFixed(4)]);
+    if(s.amp  !==undefined) rows.push(['#80DEEA','Corrente',`${s.amp.toFixed(2)} A`]);
+    if(s.volt !==undefined) rows.push(['#80DEEA','Tensão',s.volt>=1000?`${(s.volt/1000).toFixed(2)} kV`:`${s.volt.toFixed(1)} V`]);
+    if(s.hz   !==undefined) rows.push(['#80CBC4','Frequência',`${s.hz.toFixed(2)} Hz`]);
+    if(s.demMax!==undefined) rows.push(['#FFBD00','Demanda Máxima',`${s.demMax} kW`]);
+    if(s.demMaxFpi!==undefined) rows.push(['#FFA726','Dem. Máx. FPI',`${s.demMaxFpi} kW`]);
+    if(s.contrato!==undefined) rows.push(['#4DD0E1','Contrato',`${s.contrato} kW`]);
+    if(s.consumo!==undefined) rows.push(['#00E5A0','Consumo Acumulado',`${s.consumo.toLocaleString('pt-BR')} kWh`]);
+    if(s.projetado!==undefined) rows.push(['#80CBC4','Projetado Mês',`${s.projetado.toLocaleString('pt-BR')} kWh`]);
+    // compressor extras
+    if(s.temp !==undefined) rows.push([s.temp>80?'#FF4040':s.temp>70?'#FFBD00':'#80DEEA','Temperatura',`${s.temp.toFixed(0)} °C`]);
+    if(s.pSuc !==undefined) rows.push(['#80CBC4','Pressão Sucção',`${s.pSuc.toFixed(2)} bar`]);
+    if(s.pDesc!==undefined) rows.push(['#80DEEA','Pressão Descarga',`${(s.pDesc||0).toFixed(2)} bar`]);
+    if(s.vazao!==undefined && s.vazao>0) rows.push(['#00E5A0','Vazão',`${s.vazao.toFixed(2)} m³/h`]);
+    if(s.horas!==undefined) rows.push(['#5A7B95','Horas de Operação',`${s.horas.toLocaleString('pt-BR')} h`]);
+  }
+  if(eq.type==='pump'){
+    rows.push(['#00B4FF','Pot. Ativa',`${(s.kw||0).toFixed(2)} kW`]);
+    rows.push(['#80DEEA','Corrente',`${(s.amp||0).toFixed(2)} A`]);
+    rows.push(['#00E5A0','Vol. Instantâneo',`${(s.instM3||0).toFixed(2)} m³`]);
+    rows.push(['#FFD54F','Vol. Máximo',`${(s.maxM3||0).toFixed(2)} m³`]);
+    rows.push(['#80CBC4','Vazão',`${(s.vazao||0).toFixed(2)} m³/h`]);
+    rows.push(['#4DD0E1','Pressão',`${(s.pressao||0).toFixed(2)} bar`]);
+  }
+  if(eq.type==='gas'){
+    rows.push(['#A855F7','Vol. Instantâneo',`${(s.instM3||0).toFixed(2)} m³`]);
+    rows.push(['#CE93D8','Vol. Máximo',`${(s.maxM3||0).toFixed(2)} m³`]);
+    rows.push(['#80CBC4','Fluxo Atual',`${(s.fluxo||0).toFixed(3)} m³/h`]);
+    rows.push(['#5A7B95','Consumo/hora',`${((s.instM3||0)/720).toFixed(3)} m³`]);
+  }
+
+  // Divide params em 2 colunas
+  const half = Math.ceil(rows.length/2);
+  const col1 = rows.slice(0,half);
+  const col2 = rows.slice(half);
+  function rowsHTML(arr){ return arr.map(([c,l,v])=>`
+    <div class="p-row">
+      <span class="p-lbl"><span class="p-c" style="background:${c}"></span>${l}</span>
+      <span class="p-val">${v}</span>
+    </div>`).join(''); }
+
+  paramsHTML=`<div class="params-grid"><div>${rowsHTML(col1)}</div><div>${rowsHTML(col2)}</div></div>`;
+
+  // Mini chart histórico
+  const hist = history[id];
+  const minH = Math.min(...hist), maxH = Math.max(...hist);
+  const rng = maxH - minH || 1;
+  const W=740, H=70, pad=4;
+  const pts = hist.map((v,i)=>{
+    const x = pad + i*(W-2*pad)/(hist.length-1);
+    const y = H - pad - ((v-minH)/rng)*(H-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const areaD=`M${pad},${H-pad} L${hist.map((v,i)=>{
+    const x=pad+i*(W-2*pad)/(hist.length-1);
+    const y=H-pad-((v-minH)/rng)*(H-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' L')} L${W-pad},${H-pad} Z`;
+
+  const chartHTML=`
+    <div class="chart-wrap">
+      <div class="chart-lbl">Histórico — últimas 30 medições</div>
+      <svg class="hist-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="hg" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#00B4FF" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#00B4FF" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" class="h-grid"/>
+        <path class="h-area" d="${areaD}"/>
+        <polyline class="h-line" points="${pts}"/>
+      </svg>
+    </div>`;
+
+  document.getElementById('m-body').innerHTML = `
+    <div class="modal-top">
+      ${gaugeHTML || '<div></div>'}
+      ${paramsHTML}
+    </div>
+    ${chartHTML}`;
+
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeModalBtn(){
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function closeModal(e){
+  if(e.target===document.getElementById('overlay')) closeModalBtn();
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModalBtn(); });
+
+/* =========================================================
+   INICIALIZAÇÃO E LOOP PRINCIPAL
+   ========================================================= */
+initState();
+renderAll();
+updateDOM();
+updateClock();
+
+setInterval(()=>{ applyNoise(); updateDOM(); }, 1500);
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
